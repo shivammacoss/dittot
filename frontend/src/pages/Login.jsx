@@ -65,7 +65,7 @@ const Login = () => {
 
         {/* Logo */}
         <div className="flex justify-center mb-6">
-          <img src="/src/assets/DittoTlogopng.png" alt="DittoT" className="h-12 w-auto" />
+          <img src="/DittoTlogopng.png" alt="DittoT" className="h-12 w-auto" />
         </div>
 
         {/* Tabs */}

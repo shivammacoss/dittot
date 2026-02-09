@@ -6,7 +6,7 @@ import {
 } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
 import { API_URL } from '../config/api'
-const logoImage = '/src/assets/DittoTlogopng.png'
+const logoImage = '/DittoTlogopng.png'
 
 const SupportPage = () => {
   const navigate = useNavigate()

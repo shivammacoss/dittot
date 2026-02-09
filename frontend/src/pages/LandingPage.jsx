@@ -52,9 +52,9 @@ const Navigation = () => {
 
             <img
 
-              src="/powertradefxlogo.png"
+              src="/DittoTlogopng.png"
 
-              alt="PowerTradeFX Logo"
+              alt="DittoT Logo"
 
               className="h-[50px] w-auto object-contain"
 

@@ -72,7 +72,7 @@ import { useTheme } from '../context/ThemeContext'
 
 import { API_URL } from '../config/api'
 
-const logoImage = '/powertradefxlogo.png'
+const logoImage = '/DittoTlogopng.png'
 
 
 

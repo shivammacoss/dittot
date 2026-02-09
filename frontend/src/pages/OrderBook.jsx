@@ -62,7 +62,7 @@ import { API_URL } from '../config/api'
 
 import priceStreamService from '../services/priceStream'
 
-const logoImage = '/powertradefxlogo.png'
+const logoImage = '/DittoTlogopng.png'
 
 
 

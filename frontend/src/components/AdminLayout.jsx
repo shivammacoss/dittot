@@ -54,7 +54,7 @@ import {
 
 } from 'lucide-react'
 
-const logoImage = '/powertradefxlogo.png'
+const logoImage = '/DittoTlogopng.png'
 
 
 
