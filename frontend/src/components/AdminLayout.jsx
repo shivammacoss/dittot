@@ -50,7 +50,10 @@ import {
 
   Image,
 
-  User
+  User,
+
+  BookOpen,
+  BookMarked
 
 } from 'lucide-react'
 
@@ -99,6 +102,10 @@ const AdminLayout = ({ children, title, subtitle }) => {
     { name: 'User Management', icon: Users, path: '/admin/users', sidebarKey: 'userManagement' },
 
     { name: 'Trade Management', icon: TrendingUp, path: '/admin/trades', sidebarKey: 'tradeManagement' },
+
+    { name: 'Book Management', icon: BookOpen, path: '/admin/book-management', sidebarKey: 'bookManagement' },
+
+    { name: 'A Book Trades', icon: BookMarked, path: '/admin/a-book-trades', sidebarKey: 'bookManagement' },
 
     { name: 'Fund Management', icon: Wallet, path: '/admin/funds', sidebarKey: 'fundManagement' },
 

@@ -32,6 +32,7 @@ import bonusRoutes from './routes/bonus.js'
 import bannerRoutes from './routes/banner.js'
 import employeeRoutes from './routes/employee.js'
 import employeeManagementRoutes from './routes/employeeManagement.js'
+import bookManagementRoutes from './routes/bookManagement.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import copyTradingEngine from './services/copyTradingEngine.js'
@@ -191,7 +192,21 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }))
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('Connected to MongoDB'))
+  .then(async () => {
+    console.log('Connected to MongoDB')
+    // Migrate existing users with null bookType to 'B'
+    try {
+      const result = await mongoose.model('User').updateMany(
+        { $or: [{ bookType: null }, { bookType: { $exists: false } }] },
+        { $set: { bookType: 'B' } }
+      )
+      if (result.modifiedCount > 0) {
+        console.log(`[Migration] Set ${result.modifiedCount} users with null bookType to B Book`)
+      }
+    } catch (err) {
+      console.error('[Migration] Error migrating bookType:', err)
+    }
+  })
   .catch((err) => console.error('MongoDB connection error:', err))
 
 // Routes
@@ -220,6 +235,7 @@ app.use('/api/bonus', bonusRoutes)
 app.use('/api/banners', bannerRoutes)
 app.use('/api/employee', employeeRoutes)
 app.use('/api/employee-mgmt', employeeManagementRoutes)
+app.use('/api/book-management', bookManagementRoutes)
 
 // Serve uploaded files statically
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')))

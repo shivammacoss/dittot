@@ -13,7 +13,10 @@ import {
   Plus,
   Edit,
   X,
-  Trash2
+  Trash2,
+  BookMarked,
+  BookOpen,
+  Shield
 } from 'lucide-react'
 import priceService from '../services/priceService'
 import binanceApiService from '../services/binanceApi'
@@ -530,21 +533,42 @@ const AdminTradeManagement = () => {
                       </p>
                     </div>
                   </div>
+                  {/* Book Type Badge */}
+                  {trade.userId?.bookType && (
+                    <div className="mb-2">
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                        trade.userId.bookType === 'A' 
+                          ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' 
+                          : 'bg-orange-500/20 text-orange-400 border border-orange-500/30'
+                      }`}>
+                        {trade.userId.bookType === 'A' ? <BookMarked size={10} /> : <BookOpen size={10} />}
+                        {trade.userId.bookType} Book
+                      </span>
+                    </div>
+                  )}
                   {/* Action Buttons */}
                   <div className="flex gap-2 pt-3 border-t border-gray-600">
-                    <button
-                      onClick={() => openEditModal(trade)}
-                      className="flex-1 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-500 rounded-lg text-sm font-medium flex items-center justify-center gap-1"
-                    >
-                      <Edit size={14} /> Edit
-                    </button>
-                    {trade.status === 'OPEN' && (
-                      <button
-                        onClick={() => openCloseModal(trade)}
-                        className="flex-1 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-500 rounded-lg text-sm font-medium flex items-center justify-center gap-1"
-                      >
-                        <XCircle size={14} /> Close
-                      </button>
+                    {trade.userId?.bookType === 'A' ? (
+                      <div className="flex-1 py-2 bg-gray-500/10 text-gray-500 rounded-lg text-sm font-medium flex items-center justify-center gap-1">
+                        <Shield size={14} /> Read Only (A Book)
+                      </div>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => openEditModal(trade)}
+                          className="flex-1 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-500 rounded-lg text-sm font-medium flex items-center justify-center gap-1"
+                        >
+                          <Edit size={14} /> Edit
+                        </button>
+                        {trade.status === 'OPEN' && (
+                          <button
+                            onClick={() => openCloseModal(trade)}
+                            className="flex-1 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-500 rounded-lg text-sm font-medium flex items-center justify-center gap-1"
+                          >
+                            <XCircle size={14} /> Close
+                          </button>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
@@ -564,6 +588,7 @@ const AdminTradeManagement = () => {
                     <th className="text-left text-gray-500 text-sm font-medium py-3 px-4">Open Price</th>
                     <th className="text-left text-gray-500 text-sm font-medium py-3 px-4">P&L</th>
                     <th className="text-left text-gray-500 text-sm font-medium py-3 px-4">Status</th>
+                    <th className="text-left text-gray-500 text-sm font-medium py-3 px-4">Book</th>
                     <th className="text-left text-gray-500 text-sm font-medium py-3 px-4">Actions</th>
                   </tr>
                 </thead>
@@ -599,24 +624,44 @@ const AdminTradeManagement = () => {
                         </div>
                       </td>
                       <td className="py-4 px-4">
-                        <div className="flex items-center gap-1">
-                          <button 
-                            onClick={() => openEditModal(trade)}
-                            className="p-2 hover:bg-blue-500/20 rounded-lg transition-colors text-gray-400 hover:text-blue-500" 
-                            title="Edit Trade"
-                          >
-                            <Edit size={16} />
-                          </button>
-                          {trade.status === 'OPEN' && (
+                        {trade.userId?.bookType ? (
+                          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                            trade.userId.bookType === 'A' 
+                              ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' 
+                              : 'bg-orange-500/20 text-orange-400 border border-orange-500/30'
+                          }`}>
+                            {trade.userId.bookType === 'A' ? <BookMarked size={10} /> : <BookOpen size={10} />}
+                            {trade.userId.bookType}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-gray-600">—</span>
+                        )}
+                      </td>
+                      <td className="py-4 px-4">
+                        {trade.userId?.bookType === 'A' ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs text-gray-500" title="A Book trades are read-only">
+                            <Shield size={14} /> Read Only
+                          </span>
+                        ) : (
+                          <div className="flex items-center gap-1">
                             <button 
-                              onClick={() => openCloseModal(trade)}
-                              className="p-2 hover:bg-red-500/20 rounded-lg transition-colors text-gray-400 hover:text-red-500" 
-                              title="Close Trade"
+                              onClick={() => openEditModal(trade)}
+                              className="p-2 hover:bg-blue-500/20 rounded-lg transition-colors text-gray-400 hover:text-blue-500" 
+                              title="Edit Trade"
                             >
-                              <XCircle size={16} />
+                              <Edit size={16} />
                             </button>
-                          )}
-                        </div>
+                            {trade.status === 'OPEN' && (
+                              <button 
+                                onClick={() => openCloseModal(trade)}
+                                className="p-2 hover:bg-red-500/20 rounded-lg transition-colors text-gray-400 hover:text-red-500" 
+                                title="Close Trade"
+                              >
+                                <XCircle size={16} />
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))}

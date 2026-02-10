@@ -124,6 +124,13 @@ const userSchema = new mongoose.Schema({
     default: null
   },
   
+  // Book Management (A Book / B Book)
+  bookType: {
+    type: String,
+    enum: ['A', 'B'],
+    default: 'B'
+  },
+  
   // KYC Status
   kycApproved: {
     type: Boolean,

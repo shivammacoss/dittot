@@ -143,6 +143,24 @@ const tradeSchema = new mongoose.Schema({
   adminModifiedAt: {
     type: Date,
     default: null
+  },
+  // MT5 A Book trade push tracking
+  mt5PositionId: {
+    type: String,
+    default: null
+  },
+  mt5PushStatus: {
+    type: String,
+    enum: ['PENDING', 'PUSHED', 'FAILED', 'CLOSED', 'CLOSE_FAILED', null],
+    default: null
+  },
+  mt5PushError: {
+    type: String,
+    default: null
+  },
+  mt5PushedAt: {
+    type: Date,
+    default: null
   }
 }, { timestamps: true })
 

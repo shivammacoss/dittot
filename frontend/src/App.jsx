@@ -44,6 +44,8 @@ import AdminBannerManagement from './pages/AdminBannerManagement'
 import LandingPage from './pages/LandingPage'
 import EmployeeLogin from './pages/EmployeeLogin'
 import AdminProfile from './pages/AdminProfile'
+import AdminBookManagement from './pages/AdminBookManagement'
+import AdminABookTrades from './pages/AdminABookTrades'
 
 function App() {
   return (
@@ -91,6 +93,8 @@ function App() {
         <Route path="/admin/bonus-management" element={<AdminBonusManagement />} />
         <Route path="/admin/banners" element={<AdminBannerManagement />} />
         <Route path="/admin/profile" element={<AdminProfile />} />
+        <Route path="/admin/book-management" element={<AdminBookManagement />} />
+        <Route path="/admin/a-book-trades" element={<AdminABookTrades />} />
         <Route path="/admin-employee" element={<EmployeeLogin />} />
         <Route path="/buy-challenge" element={<BuyChallengePage />} />
         <Route path="/challenge-dashboard" element={<ChallengeDashboardPage />} />

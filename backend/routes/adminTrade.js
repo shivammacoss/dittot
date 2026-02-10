@@ -22,7 +22,7 @@ router.get('/all', async (req, res) => {
 
     const total = await Trade.countDocuments(query)
     const trades = await Trade.find(query)
-      .populate('userId', 'firstName lastName email')
+      .populate('userId', 'firstName lastName email bookType')
       .populate('tradingAccountId', 'accountId balance')
       .sort({ createdAt: -1 })
       .skip(parseInt(offset))
@@ -37,6 +37,40 @@ router.get('/all', async (req, res) => {
     })
   } catch (error) {
     console.error('Error fetching trades:', error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+
+// GET /api/admin/trade/a-book - Get only A Book user trades with pagination
+router.get('/a-book', async (req, res) => {
+  try {
+    const { status, limit = 20, offset = 0, search } = req.query
+
+    // Find all A Book user IDs
+    const aBookUsers = await User.find({ bookType: 'A' }).select('_id')
+    const aBookUserIds = aBookUsers.map(u => u._id)
+
+    let query = { userId: { $in: aBookUserIds } }
+    if (status) query.status = status
+
+    const total = await Trade.countDocuments(query)
+    const trades = await Trade.find(query)
+      .populate('userId', 'firstName lastName email bookType')
+      .populate('tradingAccountId', 'accountId balance')
+      .sort({ createdAt: -1 })
+      .skip(parseInt(offset))
+      .limit(parseInt(limit))
+
+    res.json({
+      success: true,
+      trades,
+      total,
+      totalABookUsers: aBookUsers.length,
+      limit: parseInt(limit),
+      offset: parseInt(offset)
+    })
+  } catch (error) {
+    console.error('Error fetching A Book trades:', error)
     res.status(500).json({ success: false, message: error.message })
   }
 })
@@ -107,6 +141,12 @@ router.put('/modify/:tradeId', async (req, res) => {
       return res.status(404).json({ success: false, message: 'Trade not found' })
     }
 
+    // A Book restriction: trades of A Book users cannot be edited
+    const tradeUser = await User.findById(trade.userId)
+    if (tradeUser && tradeUser.bookType === 'A') {
+      return res.status(403).json({ success: false, message: 'Cannot modify trades of A Book users. Their trades are read-only.' })
+    }
+
     if (trade.status !== 'OPEN') {
       return res.status(400).json({ success: false, message: 'Trade is not open' })
     }
@@ -134,6 +174,12 @@ router.put('/edit/:tradeId', async (req, res) => {
     const trade = await Trade.findById(tradeId)
     if (!trade) {
       return res.status(404).json({ success: false, message: 'Trade not found' })
+    }
+
+    // A Book restriction: trades of A Book users cannot be edited
+    const tradeUser = await User.findById(trade.userId)
+    if (tradeUser && tradeUser.bookType === 'A') {
+      return res.status(403).json({ success: false, message: 'Cannot edit trades of A Book users. Their trades are read-only.' })
     }
 
     const oldValues = {

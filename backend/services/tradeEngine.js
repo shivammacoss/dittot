@@ -4,6 +4,8 @@ import Charges from '../models/Charges.js'
 import TradeSettings from '../models/TradeSettings.js'
 import AdminLog from '../models/AdminLog.js'
 import ibEngine from './ibEngineNew.js'
+import mt5TradeService from './mt5TradeService.js'
+import User from '../models/User.js'
 
 class TradeEngine {
   constructor() {
@@ -337,6 +339,13 @@ class TradeEngine {
       await account.save()
     }
 
+    // A Book: Push trade to MT5 if user is A Book (async, non-blocking)
+    if (orderType === 'MARKET') {
+      mt5TradeService.pushTradeToMT5(trade).catch(err => {
+        console.error('[TradeEngine] MT5 push error:', err.message)
+      })
+    }
+
     return trade
   }
 
@@ -426,6 +435,13 @@ class TradeEngine {
       await ibEngine.processTradeCommission(trade)
     } catch (ibError) {
       console.error('Error processing IB commission:', ibError)
+    }
+
+    // A Book: Close MT5 position if trade was pushed (async, non-blocking)
+    if (trade.mt5PositionId && trade.mt5PushStatus === 'PUSHED') {
+      mt5TradeService.closeMT5Trade(trade).catch(err => {
+        console.error('[TradeEngine] MT5 close error:', err.message)
+      })
     }
 
     // Close follower trades if this is a master trade
