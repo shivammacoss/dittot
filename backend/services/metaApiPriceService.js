@@ -323,6 +323,32 @@ function getConnectionStatus() {
   }
 }
 
+// Get account info from SDK streaming connection (no REST calls)
+function getAccountInfo() {
+  if (!streamingConnection || !isConnected) {
+    return null
+  }
+  try {
+    const ts = streamingConnection.terminalState
+    if (!ts) return null
+    const info = ts.accountInformation
+    if (!info) return null
+    return {
+      connected: true,
+      platform: info.platform || 'mt5',
+      broker: info.broker || 'Unknown',
+      server: info.server || 'Unknown',
+      login: info.login || 'Unknown',
+      name: info.name || 'Unknown',
+      balance: info.balance || 0,
+      equity: info.equity || 0,
+      currency: info.currency || 'USD'
+    }
+  } catch (e) {
+    return null
+  }
+}
+
 // Categorize symbol
 function categorizeSymbol(symbol) {
   if (FOREX_SYMBOLS.includes(symbol)) return 'Forex'
@@ -375,6 +401,7 @@ export default {
   setOnConnectionChange,
   isWebSocketConnected,
   getConnectionStatus,
+  getAccountInfo,
   categorizeSymbol,
   getSymbolName,
   getDynamicSymbols,

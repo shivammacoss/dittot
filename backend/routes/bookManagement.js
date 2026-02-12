@@ -113,65 +113,44 @@ router.put('/bulk-assign', async (req, res) => {
   }
 })
 
-// Price feed status cache (60s TTL)
-let priceFeedCache = null
-let priceFeedCacheTime = 0
-const PRICE_FEED_CACHE_TTL = 60000
-
-// GET /api/book-management/price-feed-status - Get price feed account info (.env MetaApi)
+// GET /api/book-management/price-feed-status - Get price feed account info from SDK streaming (no REST calls)
 router.get('/price-feed-status', async (req, res) => {
   try {
-    // Return cached if fresh
-    if (priceFeedCache && (Date.now() - priceFeedCacheTime) < PRICE_FEED_CACHE_TTL) {
-      return res.json(priceFeedCache)
-    }
-
     const token = process.env.METAAPI_TOKEN || ''
     const accountId = process.env.METAAPI_ACCOUNT_ID || ''
-    const region = process.env.METAAPI_REGION || 'new-york'
 
     if (!token || !accountId) {
-      return res.json({ success: true, connected: false, error: 'METAAPI_TOKEN or METAAPI_ACCOUNT_ID not set in .env' })
+      return res.json({ success: true, connected: false, error: 'Set METAAPI_TOKEN and METAAPI_ACCOUNT_ID in .env' })
     }
 
-    const API_BASE = `https://mt-client-api-v1.${region}.agiliumtrade.ai`
-    const url = `${API_BASE}/users/current/accounts/${accountId}/account-information`
+    // Use SDK streaming connection status — zero REST calls, no rate limits
+    const metaApiPriceService = (await import('../services/metaApiPriceService.js')).default
+    const accountInfo = metaApiPriceService.getAccountInfo()
 
-    let response = await fetch(url, {
-      headers: { 'Accept': 'application/json', 'auth-token': token }
-    })
+    if (accountInfo) {
+      return res.json({ success: true, ...accountInfo })
+    }
 
-    if (response.status === 429) {
-      // Return cached data if available on rate limit
-      if (priceFeedCache) return res.json(priceFeedCache)
-      await new Promise(r => setTimeout(r, 3000))
-      response = await fetch(url, {
-        headers: { 'Accept': 'application/json', 'auth-token': token }
+    // SDK not connected yet — check basic connection status
+    const connStatus = metaApiPriceService.getConnectionStatus()
+    if (connStatus.isConnected && connStatus.priceCount > 0) {
+      return res.json({
+        success: true,
+        connected: true,
+        server: 'Streaming',
+        login: accountId.substring(0, 8) + '...',
+        name: 'Price Feed',
+        balance: 0,
+        equity: 0,
+        currency: 'USD',
+        broker: 'Connected (streaming)',
+        priceCount: connStatus.priceCount
       })
     }
 
-    if (!response.ok) {
-      if (priceFeedCache) return res.json(priceFeedCache)
-      return res.json({ success: true, connected: false, error: `HTTP ${response.status}` })
-    }
-
-    const data = await response.json()
-    priceFeedCache = {
-      success: true,
-      connected: true,
-      server: data.server || 'Unknown',
-      login: data.login || 'Unknown',
-      name: data.name || 'Unknown',
-      balance: data.balance || 0,
-      equity: data.equity || 0,
-      currency: data.currency || 'USD',
-      broker: data.broker || 'Unknown'
-    }
-    priceFeedCacheTime = Date.now()
-    res.json(priceFeedCache)
+    return res.json({ success: true, connected: false, error: 'Price feed connecting...' })
   } catch (error) {
     console.error('Error fetching price feed status:', error)
-    if (priceFeedCache) return res.json(priceFeedCache)
     res.json({ success: true, connected: false, error: error.message })
   }
 })
@@ -179,7 +158,37 @@ router.get('/price-feed-status', async (req, res) => {
 // GET /api/book-management/mt5-status - Get global MT5 connection status for A Book
 router.get('/mt5-status', async (req, res) => {
   try {
-    const status = await mt5TradeService.getConnectionStatus()
+    // Check if DB has separate Trade Push credentials
+    const settings = await MT5Settings.getSettings()
+    const hasSeparateDbCreds = settings.isActive && settings.metaApiToken && settings.accountId
+
+    let status
+    if (!hasSeparateDbCreds) {
+      // No separate Trade Push account configured — use price feed SDK connection
+      const metaApiPriceService = (await import('../services/metaApiPriceService.js')).default
+      const accountInfo = metaApiPriceService.getAccountInfo()
+      if (accountInfo) {
+        status = { ...accountInfo, source: 'env' }
+      } else {
+        const connStatus = metaApiPriceService.getConnectionStatus()
+        if (connStatus.isConnected) {
+          status = { connected: true, source: 'env', broker: 'Connected (streaming)', balance: 0, equity: 0 }
+        } else {
+          status = { connected: false, error: 'Click ⚙ to connect an MT5 account for A Book trade pushing.', source: 'env' }
+        }
+      }
+    } else {
+      // Separate DB credentials — use REST call (with caching/timeout)
+      status = await mt5TradeService.getConnectionStatus()
+      // If DB credentials failed, fall back to SDK streaming info
+      if (!status.connected) {
+        const metaApiPriceService = (await import('../services/metaApiPriceService.js')).default
+        const accountInfo = metaApiPriceService.getAccountInfo()
+        if (accountInfo) {
+          status = { ...accountInfo, source: 'database', note: 'Using price feed connection (trade push credentials failed)' }
+        }
+      }
+    }
     
     // Get A Book trade push stats
     const totalPushed = await Trade.countDocuments({ mt5PushStatus: 'PUSHED' })
